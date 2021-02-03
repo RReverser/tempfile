@@ -8,10 +8,8 @@ rust:
 os:
   - linux
   - osx
-env:
-  - CARGO_FLAGS=
 before_install:
-  - "[[ -v WASM ]] && curl https://wasmtime.dev/install.sh -sSf | bash"
+  - if [ ! -z $WASM ]; then curl https://wasmtime.dev/install.sh -sSf | bash; fi
 script:
   - cargo test --verbose $CARGO_FLAGS
 jobs:
