@@ -1,44 +1,17 @@
 use std::env;
-use std::ffi::{CString, OsStr};
+use std::ffi::OsStr;
 use std::fs::{self, File, OpenOptions};
 use std::io;
 cfg_if! {
     if #[cfg(not(target_os = "wasi"))] {
-        use std::os::unix::ffi::OsStrExt;
         use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
     } else {
-        use std::os::wasi::ffi::OsStrExt;
         #[cfg(feature = "nightly")]
         use std::os::wasi::fs::MetadataExt;
     }
 }
 use crate::util;
 use std::path::Path;
-
-#[cfg(not(target_os = "redox"))]
-use libc::{c_char, c_int, link, rename, unlink};
-
-#[cfg(not(target_os = "redox"))]
-#[inline(always)]
-pub fn cvt_err(result: c_int) -> io::Result<c_int> {
-    if result == -1 {
-        Err(io::Error::last_os_error())
-    } else {
-        Ok(result)
-    }
-}
-
-#[cfg(target_os = "redox")]
-#[inline(always)]
-pub fn cvt_err(result: Result<usize, syscall::Error>) -> io::Result<usize> {
-    result.map_err(|err| io::Error::from_raw_os_error(err.errno))
-}
-
-// Stolen from std.
-pub fn cstr(path: &Path) -> io::Result<CString> {
-    CString::new(path.as_os_str().as_bytes())
-        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "path contained a null"))
-}
 
 pub fn create_named(path: &Path, open_options: &mut OpenOptions) -> io::Result<File> {
     open_options.read(true).write(true).create_new(true);
@@ -124,25 +97,15 @@ pub fn reopen(_file: &File, _path: &Path) -> io::Result<File> {
 
 #[cfg(not(target_os = "redox"))]
 pub fn persist(old_path: &Path, new_path: &Path, overwrite: bool) -> io::Result<()> {
-    unsafe {
-        let old_path = cstr(old_path)?;
-        let new_path = cstr(new_path)?;
-        if overwrite {
-            cvt_err(rename(
-                old_path.as_ptr() as *const c_char,
-                new_path.as_ptr() as *const c_char,
-            ))?;
-        } else {
-            cvt_err(link(
-                old_path.as_ptr() as *const c_char,
-                new_path.as_ptr() as *const c_char,
-            ))?;
-            // Ignore unlink errors. Can we do better?
-            // On recent linux, we can use renameat2 to do this atomically.
-            let _ = unlink(old_path.as_ptr() as *const c_char);
-        }
-        Ok(())
+    if overwrite {
+        std::fs::rename(old_path, new_path)?;
+    } else {
+        std::fs::hard_link(old_path, new_path)?;
+        // Ignore unlink errors. Can we do better?
+        // On recent linux, we can use renameat2 to do this atomically.
+        std::fs::remove_file(old_path)?;
     }
+    Ok(())
 }
 
 #[cfg(target_os = "redox")]
