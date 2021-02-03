@@ -9,7 +9,10 @@ os:
   - linux
   - osx
 before_install:
-  - if [ ! -z $WASM ]; then curl https://wasmtime.dev/install.sh -sSf | bash; fi
+  - if [ ! -z $WASM ]; then
+      rustup target add wasm32-wasi
+      curl https://wasmtime.dev/install.sh -sSf | bash
+    fi
 script:
   - cargo test --verbose $CARGO_FLAGS
 jobs:
