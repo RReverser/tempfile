@@ -2,9 +2,19 @@ use rand::distributions::Alphanumeric;
 use rand::{self, Rng};
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
-use std::{io, str};
+use std::{env, io, str};
 
 use crate::error::IoResultExt;
+
+pub fn temp_root() -> PathBuf {
+    if cfg!(target_os = "wasi") {
+        env::var_os("TMPDIR")
+            .expect("expected TMPDIR to be set to a root directory for temporary files")
+            .into()
+    } else {
+        env::temp_dir()
+    }
+}
 
 fn tmpname(prefix: &OsStr, suffix: &OsStr, rand_len: usize) -> OsString {
     let mut buf = OsString::with_capacity(prefix.len() + suffix.len() + rand_len);

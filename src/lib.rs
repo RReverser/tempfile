@@ -27,6 +27,14 @@
 //! rely on file paths for _some_ operations. See the security documentation on
 //! the `NamedTempFile` type for more information.
 //!
+//! ## WASI
+//!
+//! WASI does not have a standard temporary directory, since it can run on a variety of different hosts.
+//! This create will look for a path to use as a root temporary directory in a `TMPDIR` environment variable.
+//!
+//! It's the end user's responsibility to map this path to a host temporary directory that can be automatically
+//! cleaned up by the host OS. If it's a regular directory, then `tempfile` will leak resources as well.
+//!
 //! ## Examples
 //!
 //! Create a temporary file and write some data into it:
@@ -149,6 +157,7 @@ pub use crate::file::{
     tempfile, tempfile_in, NamedTempFile, PathPersistError, PersistError, TempPath,
 };
 pub use crate::spooled::{spooled_tempfile, SpooledTempFile};
+pub use crate::util::temp_root;
 
 /// Create a new temporary file or directory with custom parameters.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -383,7 +392,7 @@ impl<'a, 'b> Builder<'a, 'b> {
     /// [security]: struct.NamedTempFile.html#security
     /// [resource-leaking]: struct.NamedTempFile.html#resource-leaking
     pub fn tempfile(&self) -> io::Result<NamedTempFile> {
-        self.tempfile_in(&env::temp_dir())
+        self.tempfile_in(&temp_root())
     }
 
     /// Create the named temporary file in the specified directory.
@@ -457,7 +466,7 @@ impl<'a, 'b> Builder<'a, 'b> {
     ///
     /// [resource-leaking]: struct.TempDir.html#resource-leaking
     pub fn tempdir(&self) -> io::Result<TempDir> {
-        self.tempdir_in(&env::temp_dir())
+        self.tempdir_in(&temp_root())
     }
 
     /// Attempts to make a temporary directory inside of `dir`.

@@ -9,7 +9,7 @@ use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
 use crate::error::IoResultExt;
-use crate::Builder;
+use crate::{temp_root, Builder};
 
 mod imp;
 
@@ -52,7 +52,7 @@ mod imp;
 ///
 /// [`std::env::temp_dir()`]: https://doc.rust-lang.org/std/env/fn.temp_dir.html
 pub fn tempfile() -> io::Result<File> {
-    tempfile_in(&env::temp_dir())
+    tempfile_in(&temp_root())
 }
 
 /// Create a new temporary file in the specified directory.
