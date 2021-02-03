@@ -11,14 +11,14 @@ os:
 env:
   - CARGO_FLAGS=
 before_install:
-  - if $WASM; then curl https://wasmtime.dev/install.sh -sSf | bash;
+  - [[ -v WASM ]] && curl https://wasmtime.dev/install.sh -sSf | bash;
 script:
   - cargo test --verbose $CARGO_FLAGS
 jobs:
   include:
     - rust: 1.40.0
       os: linux
-      env: CARGO_FLAGS="--target wasm32-wasi" WASM=1
+      env: WASM=1 CARGO_FLAGS="--target wasm32-wasi"
     - rust: nightly
       os: linux
-      env: CARGO_FLAGS="--target wasm32-wasi --features nightly" WASM=1
+      env: WASM=1 CARGO_FLAGS="--target wasm32-wasi --features nightly"
