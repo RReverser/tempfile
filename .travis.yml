@@ -11,7 +11,7 @@ os:
 env:
   - CARGO_FLAGS=
 before_install:
-  - [[ -v WASM ]] && curl https://wasmtime.dev/install.sh -sSf | bash;
+  - "[[ -v WASM ]] && curl https://wasmtime.dev/install.sh -sSf | bash"
 script:
   - cargo test --verbose $CARGO_FLAGS
 jobs:
